@@ -11,6 +11,7 @@ class AuthService extends ChangeNotifier {
   String? name;
   String? userId;
   String? phone;
+  String? email; // Added email field
   String? token;
   String? walletAddress;
   String? _cookie; // To store cookies if needed
@@ -26,6 +27,7 @@ class AuthService extends ChangeNotifier {
     userId = await _storage.read(key: "userId");
     name = await _storage.read(key: "name");
     phone = await _storage.read(key: "phone");
+    email = await _storage.read(key: "email"); // Load email
     walletAddress = await _storage.read(key: "walletAddress");
     _cookie = await _storage.read(key: "cookie");
     notifyListeners();
@@ -134,11 +136,13 @@ class AuthService extends ChangeNotifier {
         userId = userData["_id"];
         name = userData["name"];
         this.phone = userData["phone"];
+        email = userData["email"]; // Save email from response
 
         await _storage.write(key: "token", value: token);
         await _storage.write(key: "userId", value: userId);
         await _storage.write(key: "name", value: name);
         await _storage.write(key: "phone", value: this.phone);
+        await _storage.write(key: "email", value: email); // Persist email
 
         notifyListeners();
       }
@@ -181,11 +185,13 @@ class AuthService extends ChangeNotifier {
         userId = userData["_id"];
         name = userData["name"];
         phone = userData["phone"];
+        email = userData["email"]; // Save email from response
 
         await _storage.write(key: "token", value: token);
         await _storage.write(key: "userId", value: userId);
         await _storage.write(key: "name", value: name);
         await _storage.write(key: "phone", value: phone);
+        await _storage.write(key: "email", value: email); // Persist email
 
         notifyListeners();
       }
@@ -239,6 +245,7 @@ class AuthService extends ChangeNotifier {
     name = null;
     userId = null;
     phone = null;
+    email = null; // Clear email
     token = null;
     walletAddress = null;
     _cookie = null;
