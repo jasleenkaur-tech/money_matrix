@@ -2,24 +2,23 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/services/auth_service.dart';
-import '../home_page.dart';
+import 'login_page.dart';
 
-class OtpPage extends StatefulWidget {
+class ResetPasswordOtpPage extends StatefulWidget {
   final String phone;
-  const OtpPage({super.key, required this.phone});
+  const ResetPasswordOtpPage({super.key, required this.phone});
 
   @override
-  State<OtpPage> createState() => _OtpPageState();
+  State<ResetPasswordOtpPage> createState() => _ResetPasswordOtpPageState();
 }
 
-class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
+class _ResetPasswordOtpPageState extends State<ResetPasswordOtpPage> with SingleTickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
   final TextEditingController _otpController = TextEditingController();
   bool _loading = false;
   String _message = "";
-  String _status = ""; // To show status like "Creating Wallet..."
 
   @override
   void initState() {
@@ -36,7 +35,7 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
-  Future<void> _verifyOtp(AuthService auth) async {
+  Future<void> _verifyResetOtp(AuthService auth) async {
     if (_otpController.text.length < 4) {
       setState(() => _message = "Please enter a valid OTP");
       return;
@@ -45,47 +44,34 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
     setState(() {
       _loading = true;
       _message = "";
-      _status = "Verifying OTP...";
     });
 
     try {
-      final res = await auth.verifyOtp(
+      // ✅ Now correctly matches the AuthService resetPassword signature (only phone and otp)
+      final res = await auth.resetPassword(
         phone: widget.phone,
         otp: _otpController.text.trim(),
       );
 
       if (!mounted) return;
+      setState(() => _loading = false);
 
-      final bool isVerifySuccess = res["success"] == true || res["status"] == "success" || res["status"] == 200;
+      final bool isSuccess = res["status"] == "success" || 
+                             res["status"] == true || 
+                             res["success"] == true;
 
-      if (isVerifySuccess) {
-        // ✅ OTP Verified. Now Create Wallet immediately.
-        setState(() => _status = "Creating Wallet...");
-        
-        final walletRes = await auth.createWallet(auth.token!);
-        
-        if (!mounted) return;
-        setState(() => _loading = false);
-
-        if (walletRes["success"] == true) {
-          // ✅ Wallet Created. Go to HOME PAGE.
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const HomePage()),
-            (route) => false,
-          );
-        } else {
-          // ❌ Wallet API failed.
-          setState(() {
-            _message = walletRes["message"] ?? "Wallet creation failed. Please try again.";
-            _status = "";
-          });
-        }
+      if (isSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Password reset successful! Please login.")),
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+          (route) => false,
+        );
       } else {
         setState(() {
-          _loading = false;
           _message = res["message"] ?? "OTP verification failed";
-          _status = "";
         });
       }
     } catch (e) {
@@ -93,7 +79,6 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
       setState(() {
         _loading = false;
         _message = "Connection error. Please try again.";
-        _status = "";
       });
     }
   }
@@ -103,6 +88,7 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
     final auth = Provider.of<AuthService>(context, listen: false);
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(image: AssetImage("assets/images/background.png"), fit: BoxFit.cover),
@@ -135,7 +121,7 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
                         ),
                         child: Column(
                           children: [
-                            const Text("OTP Verification", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                            const Text("Reset Password", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
                             const SizedBox(height: 12),
                             Text("Enter the OTP sent to\n${widget.phone}", textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14)),
                             const SizedBox(height: 25),
@@ -156,30 +142,21 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
                               ),
                             ),
                             const SizedBox(height: 25),
-                            
-                            // Status message (Verifying... / Creating Wallet...)
-                            if (_status.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: Text(_status, style: const TextStyle(color: Colors.white70, fontSize: 13, fontStyle: FontStyle.italic)),
-                              ),
-
                             if (_message.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 15),
                                 child: Text(_message, style: const TextStyle(color: Colors.blue), textAlign: TextAlign.center),
                               ),
-                            
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blue,
                                 minimumSize: const Size(double.infinity, 50),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               ),
-                              onPressed: _loading ? null : () => _verifyOtp(auth),
+                              onPressed: _loading ? null : () => _verifyResetOtp(auth),
                               child: _loading
                                   ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                  : const Text("Verify & Proceed", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                                  : const Text("Verify & Reset", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),

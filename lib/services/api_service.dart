@@ -140,7 +140,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 // Use your PC's actual local IP for real device testing
-const String API_BASE = "https://moneymatrix-r3ae.onrender.com";
+// const String API_BASE = "https://moneymatrix-r3ae.onrender.com";
+const String API_BASE = "https://delphia-synostotic-fletcher.ngrok-free.dev";
 
 class ApiService {
   static Future<Map<String, dynamic>> post(

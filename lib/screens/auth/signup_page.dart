@@ -1,354 +1,3 @@
-// import 'dart:convert';
-// import 'dart:ui';
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-// import '/services/auth_service.dart';
-// import 'otp_page.dart';
-// import 'login_page.dart';
-//
-// // ===================================================
-// //              SIGNUP PAGE
-// // ===================================================
-// class SignupPage extends StatefulWidget {
-//   const SignupPage({super.key});
-//
-//   @override
-//   State<SignupPage> createState() => _SignupPageState();
-// }
-//
-// class _SignupPageState extends State<SignupPage>
-//     with SingleTickerProviderStateMixin {
-//   final _formKey = GlobalKey<FormState>();
-//
-//   final _name = TextEditingController();
-//   final _email = TextEditingController();
-//   final _mobile = TextEditingController();
-//   final _dob = TextEditingController();
-//   final _pass = TextEditingController();
-//
-//   bool _loading = false;
-//   String _msg = "";
-//
-//   late AnimationController _fadeCtrl;
-//   late Animation<double> _fadeAnim;
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//
-//     _fadeCtrl = AnimationController(
-//       duration: const Duration(milliseconds: 700),
-//       vsync: this,
-//     );
-//
-//     _fadeAnim =
-//         CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeInOutCubic);
-//
-//     _fadeCtrl.forward();
-//   }
-//
-//   @override
-//   void dispose() {
-//     _fadeCtrl.dispose();
-//     _name.dispose();
-//     _email.dispose();
-//     _mobile.dispose();
-//     _dob.dispose();
-//     _pass.dispose();
-//     super.dispose();
-//   }
-//
-//   // ===================================================
-//   //                 DATE PICKER
-//   // ===================================================
-//   Future<void> _selectDate() async {
-//     final picked = await showDatePicker(
-//       context: context,
-//       initialDate: DateTime(2000),
-//       firstDate: DateTime(1950),
-//       lastDate: DateTime.now(),
-//     );
-//
-//     if (picked != null) {
-//       _dob.text =
-//       "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-//     }
-//   }
-//
-//   // ===================================================
-//   //                 SIGNUP API
-//   // ===================================================
-//   Future<void> _handleSignup(AuthService auth) async {
-//     if (!_formKey.currentState!.validate()) return;
-//
-//     setState(() => _loading = true);
-//
-//     try {
-//       final mobile = "+91${_mobile.text.trim()}";
-//
-//       final res = await auth.signup(
-//         name: _name.text.trim(),
-//         email: _email.text.trim(),
-//         mobile: mobile,
-//         dob: _dob.text.trim(),
-//         password: _pass.text,
-//       );
-//
-//       Map<String, dynamic> parsed = res;
-//
-//       if (res["status"] == "error" && res["raw"] != null) {
-//         final raw = res["raw"];
-//         final start = raw.indexOf("{");
-//         if (start > 0) {
-//           try {
-//             parsed = jsonDecode(raw.substring(start));
-//           } catch (_) {}
-//         }
-//       }
-//
-//       setState(() => _loading = false);
-//
-//       if (parsed["status"] == "success") {
-//         if (!mounted) return;
-//         Navigator.pushReplacement(
-//           context,
-//           MaterialPageRoute(
-//             builder: (_) => OtpPage(mobile: mobile),
-//           ),
-//         );
-//       } else {
-//         setState(() => _msg = parsed["message"] ?? "Signup failed");
-//       }
-//     } catch (e) {
-//       setState(() {
-//         _loading = false;
-//         _msg = "Error: $e";
-//       });
-//     }
-//   }
-//
-//   // ===================================================
-//   //                 MAIN UI
-//   // ===================================================
-//   @override
-//   Widget build(BuildContext context) {
-//     final auth = Provider.of<AuthService>(context, listen: false);
-//
-//     return Scaffold(
-//       body: Container(
-//         width: double.infinity,
-//         height: double.infinity,
-//         // decoration: const BoxDecoration(
-//         //   gradient: LinearGradient(
-//         //     begin: Alignment.topLeft,
-//         //     end: Alignment.bottomRight,
-//         //     colors: [
-//         //       Color(0xFF4A148C), // Dark Purple
-//         //       Color(0xFF6A1B9A), // Medium Purple
-//         //       Color(0xFF7B1FA2), // Soft Purple
-//         //     ],
-//         //   ),
-//         // ),
-//         decoration: const BoxDecoration(
-//           image: DecorationImage(
-//             image: AssetImage("assets/images/background.png"),
-//             fit: BoxFit.cover,
-//           ),
-//         ),
-//         child: Center(
-//           child: SingleChildScrollView(
-//             padding: const EdgeInsets.symmetric(horizontal: 24),
-//             child: Column(
-//               children: [
-//                 // Logo
-//                 Hero(
-//                   tag: "app_logo",
-//                   child: ClipRRect(
-//                     borderRadius: BorderRadius.circular(18),
-//                     child: Image.asset(
-//                       'assets/images/logo_app.jpeg',
-//                       width: 100,
-//                       height: 100,
-//                     ),
-//                   ),
-//                 ),
-//                 const SizedBox(height: 30),
-//
-//                 // Glass Card with Fade Animation
-//                 FadeTransition(
-//                   opacity: _fadeAnim,
-//                   child: ClipRRect(
-//                     borderRadius: BorderRadius.circular(22),
-//                     child: BackdropFilter(
-//                       filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-//                       child: Container(
-//                         padding: const EdgeInsets.all(22),
-//                         decoration: BoxDecoration(
-//                           color: Colors.white.withOpacity(0.12),
-//                           borderRadius: BorderRadius.circular(22),
-//                           border: Border.all(
-//                             color: Colors.white.withOpacity(0.25),
-//                           ),
-//                         ),
-//                         child: _signupForm(auth),
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-//
-//   // ===================================================
-//   //                 SIGNUP FORM
-//   // ===================================================
-//   Widget _signupForm(AuthService auth) {
-//     return Form(
-//       key: _formKey,
-//       child: Column(
-//         children: [
-//           AppInputField(controller: _name, hint: "Full Name", icon: Icons.person),
-//           const SizedBox(height: 12),
-//           AppMobileField(controller: _mobile),
-//           const SizedBox(height: 12),
-//           AppInputField(controller: _email, hint: "Email", icon: Icons.email, keyboard: TextInputType.emailAddress),
-//           const SizedBox(height: 12),
-//           AppInputField(controller: _dob, hint: "Date of Birth", icon: Icons.date_range, readOnly: true, onTap: _selectDate),
-//           const SizedBox(height: 12),
-//           AppInputField(controller: _pass, hint: "Password", icon: Icons.lock, isPassword: true),
-//           const SizedBox(height: 20),
-//           // Signup Button
-//           ElevatedButton(
-//             style: ElevatedButton.styleFrom(
-//               backgroundColor: Colors.blue,
-//               minimumSize: const Size(double.infinity, 48),
-//               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-//             ),
-//             onPressed: _loading ? null : () => _handleSignup(auth),
-//             child: _loading
-//                 ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-//                 : const Text("Signup", style: TextStyle(color: Colors.white, fontSize: 16)),
-//           ),
-//           if (_msg.isNotEmpty)
-//             Padding(
-//               padding: const EdgeInsets.only(top: 10),
-//               child: Text(
-//                 _msg,
-//                 style: const TextStyle(color: Colors.redAccent),
-//                 textAlign: TextAlign.center,
-//               ),
-//             ),
-//           const SizedBox(height: 16),
-//           TextButton(
-//             onPressed: () {
-//               Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
-//             },
-//             child: const Text(
-//               "Already have an account? Login",
-//               style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-//
-// // ===================================================
-// //              REUSABLE INPUT FIELD
-// // ===================================================
-// class AppInputField extends StatelessWidget {
-//   final TextEditingController controller;
-//   final String hint;
-//   final IconData icon;
-//   final bool isPassword;
-//   final bool readOnly;
-//   final VoidCallback? onTap;
-//   final TextInputType keyboard;
-//
-//   const AppInputField({
-//     super.key,
-//     required this.controller,
-//     required this.hint,
-//     required this.icon,
-//     this.keyboard = TextInputType.text,
-//     this.isPassword = false,
-//     this.readOnly = false,
-//     this.onTap,
-//   });
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return TextFormField(
-//       controller: controller,
-//       readOnly: readOnly,
-//       onTap: onTap,
-//       obscureText: isPassword,
-//       keyboardType: keyboard,
-//       validator: (v) => v!.isEmpty ? "Enter $hint" : null,
-//       style: const TextStyle(color: Colors.white),
-//       decoration: _decor(hint, icon),
-//     );
-//   }
-//
-//   InputDecoration _decor(String hint, IconData icon) {
-//     return InputDecoration(
-//       labelText: hint,
-//       labelStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
-//       prefixIcon: Icon(icon, color: Colors.white),
-//       filled: true,
-//       fillColor: Colors.white.withOpacity(0.05),
-//       border: _border(),
-//       enabledBorder: _border(),
-//       focusedBorder: const OutlineInputBorder(
-//         borderSide: BorderSide(color: Colors.deepPurpleAccent),
-//         borderRadius: BorderRadius.all(Radius.circular(14)),
-//       ),
-//     );
-//   }
-//
-//   OutlineInputBorder _border() {
-//     return OutlineInputBorder(
-//       borderRadius: BorderRadius.circular(14),
-//       borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-//     );
-//   }
-// }
-//
-// // ===================================================
-// //              MOBILE FIELD
-// // ===================================================
-// class AppMobileField extends StatelessWidget {
-//   final TextEditingController controller;
-//
-//   const AppMobileField({super.key, required this.controller});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return TextFormField(
-//       controller: controller,
-//       keyboardType: TextInputType.phone,
-//       validator: (v) {
-//         if (v == null || v.isEmpty) return "Enter Mobile Number";
-//         if (v.length != 10) return "Enter valid 10 digit number";
-//         return null;
-//       },
-//       style: const TextStyle(color: Colors.white),
-//       decoration: AppInputField(
-//         controller: controller,
-//         hint: "Mobile Number",
-//         icon: Icons.phone,
-//       )._decor("Mobile Number", Icons.phone).copyWith(
-//         prefixText: "+91 ",
-//         prefixStyle: const TextStyle(color: Colors.white),
-//       ),
-//     );
-//   }
-// }
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -363,272 +12,217 @@ class SignupPage extends StatefulWidget {
   State<SignupPage> createState() => _SignupPageState();
 }
 
-class _SignupPageState extends State<SignupPage>
-    with SingleTickerProviderStateMixin {
-
+class _SignupPageState extends State<SignupPage> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
 
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
   final emailController = TextEditingController();
-  final dobController = TextEditingController();
   final passwordController = TextEditingController();
 
-  bool loading = false;
-  String message = "";
+  String _selectedCountryCode = "+91"; // Default
+  final List<String> _countryCodes = ["+91", "+1", "+44", "+971", "+61", "+81"];
 
-  late AnimationController fadeController;
-  late Animation<double> fadeAnimation;
+  bool _loading = false;
+  bool _obscurePass = true;
+  String _message = "";
+
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-
-    fadeController =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
-
-    fadeAnimation =
-        CurvedAnimation(parent: fadeController, curve: Curves.easeInOut);
-
-    fadeController.forward();
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut);
+    _fadeController.forward();
   }
 
   @override
   void dispose() {
-    fadeController.dispose();
+    _fadeController.dispose();
     nameController.dispose();
     phoneController.dispose();
     emailController.dispose();
-    dobController.dispose();
     passwordController.dispose();
     super.dispose();
   }
 
-  // DATE PICKER
-  Future<void> pickDate() async {
-
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime(2000),
-      firstDate: DateTime(1950),
-      lastDate: DateTime.now(),
-    );
-
-    if (picked != null) {
-      dobController.text =
-      "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-    }
-  }
-
-  // SIGNUP FUNCTION
-  Future<void> handleSignup(AuthService auth) async {
-
+  Future<void> _handleSignup(AuthService auth) async {
+    FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
-      loading = true;
-      message = "";
+      _loading = true;
+      _message = "";
     });
 
     try {
+      // ✅ Combine country code with phone number
+      final fullPhone = "$_selectedCountryCode${phoneController.text.trim()}";
 
       final res = await auth.signup(
-        name: nameController.text,
-        phone: phoneController.text,
-        email: emailController.text,
+        name: nameController.text.trim(),
+        phone: fullPhone,
+        email: emailController.text.trim(),
         password: passwordController.text,
-        dob: dobController.text,
       );
 
-      setState(() => loading = false);
+      if (!mounted) return;
+      setState(() => _loading = false);
 
-      if (res["status"] == "success") {
+      final String status = (res["status"] ?? "").toString().toLowerCase();
+      final String msg = (res["message"] ?? "").toString().toLowerCase();
+      
+      bool isSuccess = status.contains("success") || 
+                       status.contains("otp") || 
+                       msg.contains("otp") || 
+                       msg.contains("sent") ||
+                       res["success"] == true;
 
+      if (isSuccess) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => OtpPage(
-              phone: phoneController.text,
-            ),
+            builder: (_) => OtpPage(phone: fullPhone),
           ),
         );
-
       } else {
-
-        setState(() {
-          message = res["message"] ?? "Signup failed";
-        });
-
+        setState(() => _message = res["message"] ?? "Signup failed");
       }
-
     } catch (e) {
-
+      if (!mounted) return;
       setState(() {
-        loading = false;
-        message = "Error: $e";
+        _loading = false;
+        _message = "Connection error. Please try again.";
       });
-
     }
   }
 
   @override
   Widget build(BuildContext context) {
-
     final auth = Provider.of<AuthService>(context, listen: false);
-
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage("assets/images/background.png"),
-            fit: BoxFit.cover,
+      resizeToAvoidBottomInset: false,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset("assets/images/background.png", fit: BoxFit.cover),
           ),
-        ),
 
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-
+          SafeArea(
             child: FadeTransition(
-              opacity: fadeAnimation,
+              opacity: _fadeAnimation,
+              child: Column(
+                children: [
+                  const SizedBox(height: 30),
+                  Hero(
+                    tag: "app_logo",
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Image.asset("assets/images/logo_app.jpeg", width: 80, height: 80),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text("Create Account", style: TextStyle(fontSize: 28, color: Colors.white, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 20),
 
-              child: Form(
-                key: _formKey,
-
-                child: Column(
-                  children: [
-
-                    Hero(
-                      tag: "app_logo",
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: Image.asset(
-                          "assets/images/logo_app.jpeg",
-                          width: 100,
-                          height: 100,
-                        ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Form(
+                        key: _formKey,
+                        child: _glassCard(auth),
                       ),
                     ),
-
-                    const SizedBox(height: 25),
-
-                    const Text(
-                      "Create Account",
-                      style: TextStyle(
-                        fontSize: 30,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    glassCard(auth),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget glassCard(AuthService auth) {
-
+  Widget _glassCard(AuthService auth) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-
+      borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
-          padding: const EdgeInsets.all(22),
-
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(color: Colors.white.withOpacity(0.25)),
           ),
-
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              _buildField(controller: nameController, hint: "Full Name", icon: Icons.person_outline),
+              const SizedBox(height: 14),
 
-              buildField(nameController, "Full Name", Icons.person),
-
-              const SizedBox(height: 15),
-
-              buildField(phoneController, "Mobile Number", Icons.phone,
-                  keyboard: TextInputType.phone),
-
-              const SizedBox(height: 15),
-
-              buildField(emailController, "Email", Icons.email,
-                  keyboard: TextInputType.emailAddress),
-
-              const SizedBox(height: 15),
-
-              buildField(
-                dobController,
-                "Date of Birth",
-                Icons.date_range,
-                readOnly: true,
-                onTap: pickDate,
+              // ✅ PHONE FIELD WITH COUNTRY CODE DROPDOWN
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedCountryCode,
+                        dropdownColor: Colors.black87,
+                        style: const TextStyle(color: Colors.white),
+                        items: _countryCodes.map((String code) {
+                          return DropdownMenuItem<String>(
+                            value: code,
+                            child: Text(code),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedCountryCode = val);
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildField(controller: phoneController, hint: "Phone Number", icon: Icons.phone_outlined, keyboard: TextInputType.phone),
+                  ),
+                ],
               ),
 
-              const SizedBox(height: 15),
-
-              buildField(passwordController, "Password", Icons.lock,
-                  isPassword: true),
-
-              const SizedBox(height: 20),
-
+              const SizedBox(height: 14),
+              _buildField(controller: emailController, hint: "Email", icon: Icons.email_outlined, keyboard: TextInputType.emailAddress),
+              const SizedBox(height: 14),
+              _buildField(controller: passwordController, hint: "Password", icon: Icons.lock_outline, isPassword: true),
+              const SizedBox(height: 22),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  minimumSize: const Size(double.infinity, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                  backgroundColor: Colors.blue, 
+                  minimumSize: const Size(double.infinity, 50), 
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))
                 ),
-
-                onPressed: loading ? null : () => handleSignup(auth),
-
-                child: loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                  "Signup",
-                  style: TextStyle(color: Colors.white),
-                ),
+                onPressed: _loading ? null : () => _handleSignup(auth),
+                child: _loading 
+                  ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                  : const Text("Sign Up", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
-
-              if (message.isNotEmpty)
+              if (_message.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    message,
-                    style: const TextStyle(color: Colors.red),
-                  ),
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(_message, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
                 ),
-
               const SizedBox(height: 10),
-
               TextButton(
-                onPressed: () {
-
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const LoginPage(),
-                    ),
-                  );
-
-                },
-                child: const Text(
-                  "Already have account? Login",
-                  style: TextStyle(color: Colors.white),
-                ),
-              )
+                onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage())),
+                child: const Text("Already have an account? Login", style: TextStyle(color: Colors.white70)),
+              ),
             ],
           ),
         ),
@@ -636,50 +230,22 @@ class _SignupPageState extends State<SignupPage>
     );
   }
 
-  Widget buildField(
-      TextEditingController controller,
-      String hint,
-      IconData icon, {
-
-        bool isPassword = false,
-        bool readOnly = false,
-        VoidCallback? onTap,
-        TextInputType keyboard = TextInputType.text,
-      }) {
-
+  Widget _buildField({required TextEditingController controller, required String hint, required IconData icon, bool isPassword = false, TextInputType keyboard = TextInputType.text}) {
     return TextFormField(
       controller: controller,
-      obscureText: isPassword,
-      readOnly: readOnly,
-      onTap: onTap,
+      obscureText: isPassword ? _obscurePass : false,
       keyboardType: keyboard,
-
-      validator: (v) {
-        if (v == null || v.isEmpty) {
-          return "Enter $hint";
-        }
-        return null;
-      },
-
       style: const TextStyle(color: Colors.white),
-
+      validator: (v) => (v == null || v.isEmpty) ? "Enter $hint" : null,
       decoration: InputDecoration(
         labelText: hint,
         labelStyle: const TextStyle(color: Colors.white70),
-        prefixIcon: Icon(icon, color: Colors.white),
-
+        prefixIcon: Icon(icon, color: Colors.white70, size: 20),
+        suffixIcon: isPassword ? IconButton(icon: Icon(_obscurePass ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: Colors.white54, size: 20), onPressed: () => setState(() => _obscurePass = !_obscurePass)) : null,
         filled: true,
         fillColor: Colors.white.withOpacity(0.05),
-
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-        ),
-
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: Colors.deepPurpleAccent),
-        ),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withOpacity(0.3))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Colors.deepPurpleAccent, width: 1.5)),
       ),
     );
   }

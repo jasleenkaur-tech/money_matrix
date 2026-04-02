@@ -14,16 +14,6 @@ class ProfilePage extends StatelessWidget {
       body: Stack(
         children: [
 
-          // ===== BACKGROUND IMAGE =====
-          // Container(
-          //   decoration: const BoxDecoration(
-          //     image: DecorationImage(
-          //       image: AssetImage("assets/images/profileback.png"),
-          //       fit: BoxFit.cover,
-          //     ),
-          //   ),
-          // ),
-
           // ===== PURPLE OVERLAY =====
           Container(
             color: Colors.deepPurple.withOpacity(0.7),

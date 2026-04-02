@@ -1,4 +1,3 @@
-// screens/home_page.dart
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -204,37 +203,6 @@ class _HomePageState extends State<HomePage>
           elevation: 0,
           title: Text(_titles[_selectedIndex]),
         ),
-        // drawer: Drawer(
-        //   child: Column(
-        //     children: [
-        //       UserAccountsDrawerHeader(
-        //         accountName: Text(auth.name ?? "Player"),
-        //         accountEmail: Text(auth.userId ?? ""),
-        //       ),
-        //       ListTile(
-        //         leading: const Icon(Icons.logout, color: Colors.red),
-        //         title: const Text("Logout"),
-        //         onTap: () async {
-        //           await auth.logout();
-        //           if (!mounted) return;
-        //           Navigator.pushReplacement(
-        //             context,
-        //             MaterialPageRoute(builder: (_) => const LoginPage()),
-        //           );
-        //         },
-        //       ),
-        //       SwitchListTile(
-        //         title: const Text("Dark Mode"),
-        //         value: _isDarkMode,
-        //         onChanged: _toggleTheme,
-        //       ),
-        //     ],
-        //   ),
-        // ),
-        // body: AnimatedSwitcher(
-        //   duration: const Duration(milliseconds: 350),
-        //   child: pages[_selectedIndex],
-        // ),
         body: Container(
           decoration: const BoxDecoration(
             image: DecorationImage(
