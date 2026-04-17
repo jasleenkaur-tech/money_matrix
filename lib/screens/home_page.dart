@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '/services/auth_service.dart';
+import '../services/auth_service.dart';
+import '../providers/game_provider.dart'; 
 import 'auth/login_page.dart';
 
 import 'profile_page.dart';
@@ -39,6 +40,11 @@ class _HomePageState extends State<HomePage>
     super.initState();
     _loadTheme();
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = Provider.of<AuthService>(context, listen: false);
+      auth.refreshAllData();
+    });
+
     _fabController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
@@ -58,14 +64,10 @@ class _HomePageState extends State<HomePage>
     });
   }
 
-  Future<void> _toggleTheme(bool v) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isDarkMode', v);
-    setState(() => _isDarkMode = v);
-  }
-
   // ================= DASHBOARD =================
-  Widget _buildDashboard() {
+  Widget _buildDashboard(AuthService auth, GameProvider game) {
+    final double displayBalance = game.userBalance;
+
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 50, 16, 120),
@@ -74,16 +76,10 @@ class _HomePageState extends State<HomePage>
           children: [
             const Text(
               "Welcome Back 👋",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              "Play games & earn rewards",
-              style: TextStyle(color: Colors.white70),
-            ),
+            const Text("Play games & earn rewards", style: TextStyle(color: Colors.white70)),
             const SizedBox(height: 40),
 
             // Balance Card
@@ -91,33 +87,26 @@ class _HomePageState extends State<HomePage>
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
-                gradient: LinearGradient(
-                  colors: [Colors.pink, Colors.purple.shade700],
-                ),
+                gradient: LinearGradient(colors: [Colors.pink, Colors.purple.shade700]),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
+                children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Total Balance",
-                          style: TextStyle(color: Colors.white70)),
-                      SizedBox(height: 6),
-                      Text("₹ 0",
-                          style: TextStyle(
-                              fontSize: 38,
-                              fontWeight: FontWeight.bold)),
+                      const Text("Total Balance", style: TextStyle(color: Colors.white70)),
+                      const SizedBox(height: 6),
+                      Text("₹ ${displayBalance.toStringAsFixed(2)}",
+                          style: const TextStyle(fontSize: 38, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  Icon(Icons.account_balance_wallet,
-                      size: 56, color: Colors.white),
+                  const Icon(Icons.account_balance_wallet, size: 56, color: Colors.white),
                 ],
               ),
             ),
             const SizedBox(height: 30),
 
-            // Quick Actions
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -126,16 +115,10 @@ class _HomePageState extends State<HomePage>
               crossAxisSpacing: 20,
               childAspectRatio: 1.25,
               children: [
-                _quickCard(
-                    Icons.sports_esports, "Play Game", Colors.pink,
-                        () => setState(() => _selectedIndex = 2)),
-                _quickCard(
-                    Icons.account_balance_wallet, "Wallet", Colors.amber,
-                        () => setState(() => _selectedIndex = 1)),
-                _quickCard(Icons.person, "Profile", Colors.indigo,
-                        () => setState(() => _selectedIndex = 3)),
-                _quickCard(Icons.settings, "Settings", Colors.green,
-                        () => setState(() => _selectedIndex = 4)),
+                _quickCard(Icons.sports_esports, "Play Game", Colors.pink, () => setState(() => _selectedIndex = 2)),
+                _quickCard(Icons.account_balance_wallet, "Wallet", Colors.amber, () => setState(() => _selectedIndex = 1)),
+                _quickCard(Icons.person, "Profile", Colors.indigo, () => setState(() => _selectedIndex = 3)),
+                _quickCard(Icons.settings, "Settings", Colors.green, () => setState(() => _selectedIndex = 4)),
               ],
             ),
           ],
@@ -144,8 +127,7 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  Widget _quickCard(
-      IconData icon, String title, Color color, VoidCallback onTap) {
+  Widget _quickCard(IconData icon, String title, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
@@ -167,9 +149,7 @@ class _HomePageState extends State<HomePage>
                   child: Icon(icon, color: color, size: 30),
                 ),
                 const SizedBox(height: 12),
-                Text(title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ],
             ),
           ),
@@ -178,23 +158,24 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ================= BUILD =================
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthService>();
+    final game = context.watch<GameProvider>(); 
 
     final pages = [
-      _buildDashboard(),
+      _buildDashboard(auth, game),
       WalletPage(),
       const GamePage(),
       const ProfilePage(),
       const SettingsPage(),
     ];
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
         SystemNavigator.pop();
-        return false;
       },
       child: Scaffold(
         extendBodyBehindAppBar: true,
@@ -205,47 +186,23 @@ class _HomePageState extends State<HomePage>
         ),
         body: Container(
           decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage("assets/images/homeback.png"),
-              fit: BoxFit.cover,
-            ),
+            image: DecorationImage(image: AssetImage("assets/images/homeback.png"), fit: BoxFit.cover),
           ),
           child: Container(
-            color: Colors.black.withOpacity(0.45), // overlay
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 350),
-              child: pages[_selectedIndex],
-            ),
+            color: Colors.black.withOpacity(0.45),
+            child: AnimatedSwitcher(duration: const Duration(milliseconds: 350), child: pages[_selectedIndex]),
           ),
         ),
-        floatingActionButton: _selectedIndex == 0
-            ? ScaleTransition(
-          scale: Tween(begin: 0.9, end: 1.15).animate(_fabController),
-          child: FloatingActionButton(
-            onPressed: () => setState(() => _selectedIndex = 2),
-            backgroundColor: Colors.redAccent, // button color
-            foregroundColor: Colors.white,
-            child: const Icon(Icons.play_arrow, size: 36),
-          ),
-        )
-            : null,
-        floatingActionButtonLocation:
-        FloatingActionButtonLocation.centerFloat,
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,
           onTap: (i) => setState(() => _selectedIndex = i),
           type: BottomNavigationBarType.fixed,
           items: const [
-            BottomNavigationBarItem(
-                icon: Icon(Icons.home), label: "Home"),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.wallet), label: "Wallet"),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.play_circle), label: "Play"),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.person), label: "Profile"),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.settings), label: "Settings"),
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+            BottomNavigationBarItem(icon: Icon(Icons.wallet), label: "Wallet"),
+            BottomNavigationBarItem(icon: Icon(Icons.play_circle), label: "Play"),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+            BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
           ],
         ),
       ),

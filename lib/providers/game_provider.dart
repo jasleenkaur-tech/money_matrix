@@ -16,26 +16,28 @@ class GameProvider extends ChangeNotifier {
   Map<String, dynamic>? lastBetResult;
   String? error;
   
-  // Notification system
   String? lastNotification;
+  AuthService? _auth;
 
-  bool get isBettingOpen => roundStatus == 'running' && remainingMs > 5000; // Allow until last 5s
+  bool get isBettingOpen => roundStatus == 'running' && remainingMs > 5000; 
 
   void initialize(AuthService auth) {
+    _auth = auth;
     if (auth.token == null) return;
 
     _socketService.connect(auth.token!, {
-      // 🏦 Initial Wallet Sync (Backend spelling: curret-wallet)
       'curret-wallet': (data) {
         userBalance = (data['balance'] ?? 0).toDouble();
         lockedBalance = (data['lockedBalance'] ?? 0).toDouble();
+        _auth?.updateBalance(userBalance);
         notifyListeners();
       },
 
-      // 🔄 Live Wallet Update (Win/Loss/Refund)
       'wallet-update': (data) {
         userBalance = (data['balance'] ?? 0).toDouble();
         lockedBalance = (data['lockedBalance'] ?? 0).toDouble();
+        _auth?.updateBalance(userBalance);
+        _auth?.getBetInfo(); // ✅ Sync stats in real-time on wallet update
         notifyListeners();
       },
       
@@ -51,6 +53,7 @@ class GameProvider extends ChangeNotifier {
         lastBet = null;
         lastBetResult = null;
         lastNotification = "New Round Started! 🚀";
+        _auth?.getBetInfo(); // ✅ Refresh stats at start of round
         notifyListeners();
       },
       
@@ -64,6 +67,8 @@ class GameProvider extends ChangeNotifier {
         lastBet = Bet.fromJson(data['bet']);
         userBalance = (data['balance'] ?? 0).toDouble();
         lockedBalance = (data['lockedBalance'] ?? 0).toDouble();
+        _auth?.updateBalance(userBalance);
+        _auth?.getBetInfo(); // ✅ Sync stats immediately after bet is placed
         lastNotification = "Bet of ₹${lastBet?.amount} placed on ${lastBet?.color.toUpperCase()} ✅";
         error = null;
         notifyListeners();
@@ -76,6 +81,9 @@ class GameProvider extends ChangeNotifier {
         lastNotification = isWin 
             ? "Congratulations! You won ₹${result.winAmount} 🎉" 
             : "Round Ended. Better luck next time! 🍀";
+        
+        // ✅ CRITICAL: Fetch latest stats from API when bet is settled
+        _auth?.getBetInfo(); 
         notifyListeners();
       },
       
@@ -84,6 +92,7 @@ class GameProvider extends ChangeNotifier {
         if (data['currentRound'] != null) {
           currentRound = GameRound.fromJson(data['currentRound']);
         }
+        _auth?.getBetInfo(); // ✅ Refresh stats when round finishes
         notifyListeners();
       },
       
@@ -102,7 +111,7 @@ class GameProvider extends ChangeNotifier {
       return;
     }
     _socketService.emit('place-bet', {
-      'color': color.toLowerCase(), // backend expects lowercase
+      'color': color.toLowerCase(),
       'amount': amount,
     });
   }

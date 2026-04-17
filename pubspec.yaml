@@ -24,7 +24,9 @@ dependencies:
   shelf_router: ^1.1.4
   mysql1: ^0.20.0
   crypto: ^3.0.3
-  socket_io_client: ^2.0.3 # Added for real-time game
+  socket_io_client: ^2.0.3
+  webview_flutter: ^4.4.2
+  url_launcher: ^6.2.1 # Added for opening Transak URLs
 
   cupertino_icons: ^1.0.8
 
